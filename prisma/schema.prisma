@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  user_id  String @id @db.VarChar(10)
+  nama     String @db.VarChar(100)
+  username String @db.VarChar(50)
+  password String @db.VarChar(255)
+  role_id  String @db.VarChar(10)
+
+  role Role @relation(fields: [role_id], references: [role_id])
+
+  @@map("user")
+}
+
+model Role {
+  role_id   String @id @db.VarChar(10)
+  nama_role String @db.VarChar(50)
+
+  users User[]
+
+  @@map("role")
+}
+
+model Model {
+  model_id   String @id @db.VarChar(10)
+  nama_model String @db.VarChar(100)
+  deskripsi  String? @db.Text
+
+  orders Order[]
+  boms   Bom[]
+
+  @@map("model")
+}
+
+model Order {
+  order_id      String   @id @db.VarChar(10)
+  model_id      String   @db.VarChar(10)
+  tanggal_order DateTime @db.Date
+  status_order  String   @db.VarChar(20)
+
+  model          Model          @relation(fields: [model_id], references: [model_id])
+  detail_orders  DetailOrder[]
+  produksis      Produksi[]
+
+  @@map("order")
+}
+
+model DetailOrder {
+  detail_order_id String @id @db.VarChar(10)
+  order_id        String @db.VarChar(10)
+  ukuran          String @db.VarChar(10)
+  jumlah          Int
+
+  order Order @relation(fields: [order_id], references: [order_id])
+
+  @@map("detail_order")
+}
+
+model Bahan {
+  bahan_id      String   @id @db.VarChar(10)
+  nama_bahan    String   @db.VarChar(100)
+  satuan        String   @db.VarChar(10)
+  stok          Decimal  @db.Decimal(10, 2)
+  stok_minimum  Decimal  @db.Decimal(10, 2)
+
+  boms             Bom[]
+  pemakaian_bahans PemakaianBahan[]
+
+  @@map("bahan")
+}
+
+model Bom {
+  bom_id            String  @id @db.VarChar(10)
+  model_id          String  @db.VarChar(10)
+  bahan_id          String  @db.VarChar(10)
+  jumlah_kebutuhan  Decimal @db.Decimal(10, 2)
+
+  model Model @relation(fields: [model_id], references: [model_id])
+  bahan Bahan @relation(fields: [bahan_id], references: [bahan_id])
+
+  @@map("bom")
+}
+
+model Produksi {
+  produksi_id    String    @id @db.VarChar(10)
+  order_id       String    @db.VarChar(10)
+  tahap          String    @db.VarChar(20)
+  status         String    @db.VarChar(20)
+  jumlah_diproses Int
+  tanggal_mulai  DateTime
+  tanggal_selesai DateTime?
+
+  order            Order             @relation(fields: [order_id], references: [order_id])
+  pemakaian_bahans PemakaianBahan[]
+
+  @@map("produksi")
+}
+
+model PemakaianBahan {
+  pemakaian_id String  @id @db.VarChar(10)
+  produksi_id  String  @db.VarChar(10)
+  bahan_id     String  @db.VarChar(10)
+  jumlah_pakai Decimal @db.Decimal(10, 2)
+
+  produksi Produksi @relation(fields: [produksi_id], references: [produksi_id])
+  bahan    Bahan    @relation(fields: [bahan_id], references: [bahan_id])
+
+  @@map("pemakaian_bahan")
+}
