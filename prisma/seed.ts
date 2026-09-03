@@ -1,6 +1,28 @@
 import "dotenv/config";
 import { hashPassword } from "../app/lib/auth/password";
-import { prisma } from "../app/lib/prisma";
+import { createPrismaClient } from "../app/lib/prisma";
+
+const seedDatabaseUrl =
+	process.env.DIRECT_DATABASE_URL ??
+	process.env.DATABASE_URL_UNPOOLED ??
+	process.env.DATABASE_URL;
+
+if (!seedDatabaseUrl) {
+	throw new Error("DIRECT_DATABASE_URL atau DATABASE_URL belum dikonfigurasi.");
+}
+
+const seedDatabaseHost = new URL(seedDatabaseUrl).hostname;
+const hasExplicitDirectUrl =
+	Boolean(process.env.DIRECT_DATABASE_URL) ||
+	Boolean(process.env.DATABASE_URL_UNPOOLED);
+
+if (seedDatabaseHost.includes("-pooler") && !hasExplicitDirectUrl) {
+	throw new Error(
+		"Seed membutuhkan koneksi Neon direct. Atur DIRECT_DATABASE_URL atau DATABASE_URL_UNPOOLED.",
+	);
+}
+
+const prisma = createPrismaClient(seedDatabaseUrl);
 
 const roles = [
 	{ role_id: "R01", nama_role: "Admin" },
@@ -69,6 +91,9 @@ async function main() {
 				},
 			});
 		}
+	}, {
+		maxWait: 20_000,
+		timeout: 30_000,
 	});
 
 	console.log("Seed authentication selesai: 4 role dan 4 user siap digunakan.");

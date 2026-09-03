@@ -7,13 +7,19 @@ if (!databaseUrl) {
 	throw new Error("DATABASE_URL belum dikonfigurasi.");
 }
 
+const runtimeDatabaseUrl: string = databaseUrl;
+
 const globalForPrisma = globalThis as unknown as {
 	prisma?: PrismaClient;
 };
 
-export const prisma =
-	globalForPrisma.prisma ??
-	new PrismaClient({ adapter: new PrismaPg(databaseUrl) });
+export function createPrismaClient(
+	connectionString = runtimeDatabaseUrl,
+): PrismaClient {
+	return new PrismaClient({ adapter: new PrismaPg(connectionString) });
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
 	globalForPrisma.prisma = prisma;
